@@ -5,107 +5,235 @@
 #include <Preferences.h>
 #include "soc/rtc.h"
 
-RTC_DATA_ATTR bool initialSetupDone = false;
+// Constants
+const char* DEFAULT_AP_NAME = "PetFeeder";
+const char* DEFAULT_AP_PASSWORD = "11111111";
+const char* PREF_TELEGRAM = "telegram";
+const char* PREF_TELEGRAM_BOT_TOKEN_KEY = "botToken";
+const char* PREF_TELEGRAM_GROUP_ID_KEY = "groupId";
+const char* PREF_TELEGRAM_LAST_MESSAGE_ID = "lastMessageId";
+const char* DEFAULT_TELEGRAM_BOT_TOKEN = "";
+const char* DEFAULT_TELEGRAM_GROUP_ID = "";
+const long DEFAULT_TELEGRAM_MESSAGE_ID = 0L;
+const char* TELEGRAM_CERT = TELEGRAM_CERTIFICATE_ROOT;
+const int CONFIG_PORTAL_TIMEOUT_S = 300;
+const int TELEGRAM_MAX_RETRIES = 3;
+const int TELEGRAM_RETRY_DELAY_MS = 2000;
+const uint64_t DEEP_SLEEP_DURATION_US = 60000000;  // 1 minute in microseconds
+
+const char* WELCOME_MESSAGE = "Устройство готово к использованию.\n\n"
+                              "Доступные комманды:\n\n"
+                              "1) /schedule 9:00,13:00,19:00 - установка графика кормления.";
+
+// Persistent variables
+RTC_DATA_ATTR bool initialSetupDone = true;
 RTC_DATA_ATTR bool firstLoop = true;
 
+// Global objects
 Preferences preferences;
 WiFiClientSecure securedClient;
 
+// Setup function
 void setup() {
   WiFi.mode(WIFI_STA);
-
   Serial.begin(115200);
 
-  securedClient.setCACert(TELEGRAM_CERTIFICATE_ROOT);
+  securedClient.setCACert(TELEGRAM_CERT);
 
   if (!initialSetupDone) {
     WiFiManager wm;
 
-    wm.setConfigPortalTimeout(300);
+    wm.setConfigPortalTimeout(CONFIG_PORTAL_TIMEOUT_S);
 
-    preferences.begin("telegram", false);
+    preferences.begin(PREF_TELEGRAM, false);
 
-    String botToken = preferences.getString("botToken", "");
-    String groupId = preferences.getString("groupId", "");
+    String botToken = preferences.getString(PREF_TELEGRAM_BOT_TOKEN_KEY, DEFAULT_TELEGRAM_BOT_TOKEN);
+    String groupId = preferences.getString(PREF_TELEGRAM_GROUP_ID_KEY, DEFAULT_TELEGRAM_GROUP_ID);
 
-    WiFiManagerParameter custom_bot_token("botToken", "Telegram Bot Token", botToken.c_str(), 64);
-    WiFiManagerParameter custom_group_id("groupId", "Telegram Group ID", groupId.c_str(), 20);
+    WiFiManagerParameter custom_bot_token(PREF_TELEGRAM_BOT_TOKEN_KEY, "Telegram Bot Token", botToken.c_str(), 64);
+    WiFiManagerParameter custom_group_id(PREF_TELEGRAM_GROUP_ID_KEY, "Telegram Group ID", groupId.c_str(), 20);
 
     wm.addParameter(&custom_bot_token);
     wm.addParameter(&custom_group_id);
 
-    wm.startConfigPortal("PetFeeder", "11111111");
+    wm.startConfigPortal(DEFAULT_AP_NAME, DEFAULT_AP_PASSWORD);
 
     botToken = custom_bot_token.getValue();
     groupId = custom_group_id.getValue();
 
-    preferences.putString("botToken", botToken);
-    preferences.putString("groupId", groupId);
+    preferences.putString(PREF_TELEGRAM_BOT_TOKEN_KEY, botToken);
+    preferences.putString(PREF_TELEGRAM_GROUP_ID_KEY, groupId);
+
+    preferences.end();
 
     initialSetupDone = true;
   }
 }
 
-void sendBotMessageWithRetry(const String botToken, const String chatId, const String message) {
+// Send message to Telegram with retry
+void sendBotMessage(const String botToken, const String chatId, const String message) {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Send bot message: Wi-Fi not connected!");
+    Serial.println("Telegram bot: sendBotMessage - Wi-Fi not connected!");
     return;
   }
 
   if (botToken.isEmpty()) {
-    Serial.println("Send bot message: bot token not provided!");
+    Serial.println("Telegram bot: sendBotMessage - bot token not provided!");
     return;
   }
 
   if (chatId.isEmpty()) {
-    Serial.println("Send bot message: chatId not provided!");
+    Serial.println("Telegram bot: sendBotMessage - chatId not provided!");
     return;
   }
 
   UniversalTelegramBot bot(botToken, securedClient);
 
   int retryCount = 0;
-  const int maxRetries = 3;
-  const int retryDelay = 2000;  // 2 seconds
-
   bool success = false;
 
-  while (retryCount < maxRetries && !success) {
+  while (retryCount < TELEGRAM_MAX_RETRIES && !success) {
     success = bot.sendMessage(chatId, message);
 
     if (!success) {
-      Serial.println("Send bot message: Error. Retrying...");
+      Serial.println("Telegram bot: sendBotMessage - error sending message. Retrying...");
       retryCount++;
-      delay(retryDelay);
+      delay(TELEGRAM_RETRY_DELAY_MS);
     }
   }
 
   if (!success) {
-    Serial.println("Send bot message: Failed to send message after retries!");
+    Serial.println("Telegram bot: sendBotMessage - failed to send message after retries!");
   }
 }
 
-void loop() {
-  WiFiManager wm;
+void saveLastBotMessageReceived(long lastMessageId) {
+  Serial.println("Telegram bot: saveLastBotMessageReceived - Start saving last message ID: " + String(lastMessageId));
 
-  wm.setConfigPortalTimeout(0);
+  preferences.begin(PREF_TELEGRAM, false);
 
-  wm.autoConnect();
+  Serial.println("Telegram bot: saveLastBotMessageReceived - Preferences opened");
 
-  preferences.begin("telegram", false);
+  preferences.putLong(PREF_TELEGRAM_LAST_MESSAGE_ID, lastMessageId);
 
-  String botToken = preferences.getString("botToken", "");
-  String groupId = preferences.getString("groupId", "");
+  Serial.println("Telegram bot: saveLastBotMessageReceived - Last message ID saved");
 
-  if (firstLoop) {
-    sendBotMessageWithRetry(botToken, groupId, "Устройство готово к использованию.");
-  } else {
-    sendBotMessageWithRetry(botToken, groupId, "Настало время кормить питомца.");
+  preferences.end();
+
+  Serial.println("Telegram bot: saveLastBotMessageReceived - Preferences closed");
+}
+
+
+
+void retryLastBotMessageReceived(UniversalTelegramBot& bot) {
+  Serial.println("Telegram bot: retryLastBotMessageReceived - Start getting last message ID");
+
+  preferences.begin(PREF_TELEGRAM, false);
+
+  Serial.println("Telegram bot: retryLastBotMessageReceived - Preferences opened");
+
+  long lastMessageId = preferences.getLong(PREF_TELEGRAM_LAST_MESSAGE_ID, DEFAULT_TELEGRAM_MESSAGE_ID);
+
+  Serial.println("Telegram bot: retryLastBotMessageReceived - Last message ID: " + String(lastMessageId));
+
+  preferences.end();
+
+  Serial.println("Telegram bot: retryLastBotMessageReceived - Preferences closed");
+
+  bot.last_message_received = lastMessageId;
+
+  Serial.println("Telegram bot: retryLastBotMessageReceived - Updated bot instance");
+}
+
+void handleNewMessages(UniversalTelegramBot& bot, int numNewMessages, const String chatId) {
+  Serial.println("Telegram bot: handleNewMessages - Fetched messages: " + String(numNewMessages));
+
+  for (int i = 0; i < numNewMessages; i++) {
+    if (bot.messages[i].chat_id != chatId) {
+      Serial.println("Telegram bot: handleNewMessages - Message is not from the allowed chat. Skipping...");
+      continue;
+    }
+
+    String text = bot.messages[i].text;
+
+    Serial.println("Telegram bot: handleNewMessages - Message : " + text);
+  }
+}
+
+void processBotMessages(const String botToken, const String chatId) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Telegram bot: processBotMessages - Wi-Fi not connected!");
+    return;
+  }
+
+  if (botToken.isEmpty()) {
+    Serial.println("Telegram bot: processBotMessages - bot token not provided!");
+    return;
+  }
+
+  if (chatId.isEmpty()) {
+    Serial.println("Telegram bot: processBotMessages - chatId not provided!");
+    return;
+  }
+
+  UniversalTelegramBot bot(botToken, securedClient);
+
+  bool success = false;
+  int retryCount = 0;
+  int newMessages = 0;
+
+  while (retryCount < TELEGRAM_MAX_RETRIES && !success) {
+    retryLastBotMessageReceived(bot);
+
+    newMessages = bot.getUpdates(bot.last_message_received + 1);
+
+    while (newMessages) {
+      success = true;
+
+      handleNewMessages(bot, newMessages, chatId);
+
+      newMessages = bot.getUpdates(bot.last_message_received + 1);
+    }
+
+    if (!success) {
+      Serial.println("Telegram bot: processBotMessages - Fetch bot updates: Error. Retrying...");
+      retryCount++;
+      delay(TELEGRAM_RETRY_DELAY_MS);
+    }
   }
 
 
+  if (!success) {
+    return;
+  }
+
+  saveLastBotMessageReceived(bot.last_message_received);
+}
+
+// Main loop
+void loop() {
+  WiFiManager wm;
+
+  wm.setConfigPortalTimeout(1);
+  wm.autoConnect();
+
+  preferences.begin(PREF_TELEGRAM, true);
+
+  String botToken = preferences.getString(PREF_TELEGRAM_BOT_TOKEN_KEY, DEFAULT_TELEGRAM_BOT_TOKEN);
+  String groupId = preferences.getString(PREF_TELEGRAM_GROUP_ID_KEY, DEFAULT_TELEGRAM_GROUP_ID);
+
+  preferences.end();
+
+  processBotMessages(botToken, groupId);
+
+  if (firstLoop) {
+    sendBotMessage(botToken, groupId, WELCOME_MESSAGE);
+  } else {
+    sendBotMessage(botToken, groupId, "Настало время кормить питомца.");
+  }
+
   firstLoop = false;
 
-  // Put the ESP32 to deep sleep for 1 minute
-  ESP.deepSleep(60000000);  // Sleep for 1 minute (in microseconds)
+  // Put the ESP32 to deep sleep
+  ESP.deepSleep(DEEP_SLEEP_DURATION_US);
 }
