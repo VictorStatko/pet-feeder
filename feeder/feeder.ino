@@ -1,130 +1,48 @@
+#include <Arduino.h>
+#include "WiFiManagerWrapper.h"
+#include "TelegramHandler.h"
 #include <WiFi.h>
-#include <WiFiClientSecure.h>
-#include <WiFiManager.h>
-#include <UniversalTelegramBot.h>
-#include <Preferences.h>
-#include "soc/rtc.h"
 
-// Constants
-const char* DEFAULT_AP_NAME = "PetFeeder";
-const char* DEFAULT_AP_PASSWORD = "11111111";
-const char* PREF_TELEGRAM = "telegram";
-const char* PREF_TELEGRAM_BOT_TOKEN_KEY = "botToken";
-const char* PREF_TELEGRAM_GROUP_ID_KEY = "groupId";
-const char* DEFAULT_TELEGRAM_BOT_TOKEN = "";
-const char* DEFAULT_TELEGRAM_GROUP_ID = "";
-const char* TELEGRAM_CERT = TELEGRAM_CERTIFICATE_ROOT;
-const int CONFIG_PORTAL_TIMEOUT_S = 300;
-const int TELEGRAM_MAX_RETRIES = 3;
-const int TELEGRAM_RETRY_DELAY_MS = 2000;
-const uint64_t DEEP_SLEEP_DURATION_US = 60000000;  // 1 minute in microseconds
-
-const char* WELCOME_MESSAGE = "Устройство готово к использованию.";
+const uint64_t DEEP_SLEEP_DURATION_US = 60000000;
 
 // Persistent variables
 RTC_DATA_ATTR bool initialSetupDone = false;
 RTC_DATA_ATTR bool firstLoop = true;
 
-// Global objects
-Preferences preferences;
-WiFiClientSecure securedClient;
-
 // Setup function
 void setup() {
   WiFi.mode(WIFI_STA);
   Serial.begin(115200);
-
-  securedClient.setCACert(TELEGRAM_CERT);
+  delay(1000);  // Allow Serial to stabilize
+  Serial.println("Main - Device is waking up...");
 
   if (!initialSetupDone) {
-    WiFiManager wm;
-
-    wm.setConfigPortalTimeout(CONFIG_PORTAL_TIMEOUT_S);
-
-    preferences.begin(PREF_TELEGRAM, false);
-
-    String botToken = preferences.getString(PREF_TELEGRAM_BOT_TOKEN_KEY, DEFAULT_TELEGRAM_BOT_TOKEN);
-    String groupId = preferences.getString(PREF_TELEGRAM_GROUP_ID_KEY, DEFAULT_TELEGRAM_GROUP_ID);
-
-    WiFiManagerParameter custom_bot_token(PREF_TELEGRAM_BOT_TOKEN_KEY, "Telegram Bot Token", botToken.c_str(), 64);
-    WiFiManagerParameter custom_group_id(PREF_TELEGRAM_GROUP_ID_KEY, "Telegram Group ID", groupId.c_str(), 20);
-
-    wm.addParameter(&custom_bot_token);
-    wm.addParameter(&custom_group_id);
-
-    wm.startConfigPortal(DEFAULT_AP_NAME, DEFAULT_AP_PASSWORD);
-
-    botToken = custom_bot_token.getValue();
-    groupId = custom_group_id.getValue();
-
-    preferences.putString(PREF_TELEGRAM_BOT_TOKEN_KEY, botToken);
-    preferences.putString(PREF_TELEGRAM_GROUP_ID_KEY, groupId);
-
-    preferences.end();
-
+    Serial.println("Main - Initial setup not done. Launching WiFiManager...");
+    WiFiManagerWrapper::setupWiFiManager();
     initialSetupDone = true;
-  }
-}
-
-// Send message to Telegram with retry
-void sendBotMessage(const String botToken, const String chatId, const String message) {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Telegram bot: sendBotMessage - Wi-Fi not connected!");
-    return;
-  }
-
-  if (botToken.isEmpty()) {
-    Serial.println("Telegram bot: sendBotMessage - bot token not provided!");
-    return;
-  }
-
-  if (chatId.isEmpty()) {
-    Serial.println("Telegram bot: sendBotMessage - chatId not provided!");
-    return;
-  }
-
-  UniversalTelegramBot bot(botToken, securedClient);
-
-  int retryCount = 0;
-  bool success = false;
-
-  while (retryCount < TELEGRAM_MAX_RETRIES && !success) {
-    success = bot.sendMessage(chatId, message);
-
-    if (!success) {
-      Serial.println("Telegram bot: sendBotMessage - error sending message. Retrying...");
-      retryCount++;
-      delay(TELEGRAM_RETRY_DELAY_MS);
-    }
-  }
-
-  if (!success) {
-    Serial.println("Telegram bot: sendBotMessage - failed to send message after retries!");
+    Serial.println("Main - WiFiManager setup completed.");
+  } else {
+    Serial.println("Main - Initial setup already done. Skipping WiFiManager setup.");
   }
 }
 
 // Main loop
 void loop() {
-  WiFiManager wm;
-
-  wm.setConfigPortalTimeout(1);
-  wm.autoConnect();
-
-  preferences.begin(PREF_TELEGRAM, true);
-
-  String botToken = preferences.getString(PREF_TELEGRAM_BOT_TOKEN_KEY, DEFAULT_TELEGRAM_BOT_TOKEN);
-  String groupId = preferences.getString(PREF_TELEGRAM_GROUP_ID_KEY, DEFAULT_TELEGRAM_GROUP_ID);
-
-  preferences.end();
+  Serial.println("Main - Attempting to auto-connect WiFi...");
+  WiFiManagerWrapper::autoConnectWiFi();
+  Serial.println("Main - WiFi connected successfully.");
 
   if (firstLoop) {
-    sendBotMessage(botToken, groupId, WELCOME_MESSAGE);
+    Serial.println("Main - Sending first-time setup message to Telegram...");
+    TelegramHandler::sendBotMessage("Устройство готово к использованию.");
+    Serial.println("Main - First-time setup message sent.");
   } else {
-    sendBotMessage(botToken, groupId, "Настало время кормить питомца.");
+    Serial.println("Main - Sending periodic message to Telegram...");
+    TelegramHandler::sendBotMessage("Настало время кормить питомца.");
+    Serial.println("Main - Periodic message sent.");
   }
 
   firstLoop = false;
-
-  // Put the ESP32 to deep sleep
+  Serial.println("Main - Entering deep sleep...");
   ESP.deepSleep(DEEP_SLEEP_DURATION_US);
 }
