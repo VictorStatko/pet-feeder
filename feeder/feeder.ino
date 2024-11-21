@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "WiFiManagerWrapper.h"
 #include "TelegramHandler.h"
+#include "TimeHandler.h"
 #include <WiFi.h>
 
 const uint64_t DEEP_SLEEP_DURATION_US = 60000000;
@@ -32,17 +33,25 @@ void loop() {
   WiFiManagerWrapper::autoConnectWiFi();
   Serial.println("Main - WiFi connected successfully.");
 
-  if (firstLoop) {
-    Serial.println("Main - Sending first-time setup message to Telegram...");
-    TelegramHandler::sendBotMessage("Устройство готово к использованию.");
-    Serial.println("Main - First-time setup message sent.");
-  } else {
-    Serial.println("Main - Sending periodic message to Telegram...");
-    TelegramHandler::sendBotMessage("Настало время кормить питомца.");
-    Serial.println("Main - Periodic message sent.");
-  }
+  bool time = TimeHandler::syncRealTimeClock();
 
-  firstLoop = false;
-  Serial.println("Main - Entering deep sleep...");
-  ESP.deepSleep(DEEP_SLEEP_DURATION_US);
+  if (!time) {
+    Serial.println("Main - Failed to sync time. Sending Telegram message.");
+    TelegramHandler::sendBotMessage("Возникла ошибка при синхронизации времени. Переподключение через 5 минут.");
+    ESP.deepSleep(300e6);
+  } else {
+    if (firstLoop) {
+      Serial.println("Main - Sending first-time setup message to Telegram...");
+      TelegramHandler::sendBotMessage("Устройство готово к использованию.");
+      Serial.println("Main - First-time setup message sent.");
+    } else {
+      Serial.println("Main - Sending periodic message to Telegram...");
+      TelegramHandler::sendBotMessage("Настало время кормить питомца.");
+      Serial.println("Main - Periodic message sent.");
+    }
+
+    firstLoop = false;
+    Serial.println("Main - Entering deep sleep...");
+    ESP.deepSleep(DEEP_SLEEP_DURATION_US);
+  }
 }
