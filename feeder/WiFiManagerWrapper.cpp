@@ -101,9 +101,17 @@ void WiFiManagerWrapper::autoConnectWiFi() {
   WiFiManager wm;
   wm.setConfigPortalTimeout(1);
 
-  if (!wm.autoConnect()) {
-    Serial.println("WiFiManagerWrapper - Auto-connect failed. Check WiFi settings.");
-  } else {
-    Serial.println("WiFiManagerWrapper - Auto-connect successful.");
+  int retries = 0;
+  while (retries < 10) {
+    if (wm.autoConnect()) {
+      Serial.println("WiFiManagerWrapper - Auto-connect successful.");
+      return;  // Exit if connection is successful
+    } else {
+      retries++;
+      Serial.print("WiFiManagerWrapper - Auto-connect failed. Retry ");
+      Serial.print(retries);
+      Serial.println(" of 10.");
+    }
   }
+  Serial.println("WiFiManagerWrapper - Auto-connect failed after 10 retries. Check WiFi settings.");
 }

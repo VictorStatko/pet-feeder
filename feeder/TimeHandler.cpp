@@ -1,11 +1,14 @@
 #include "TimeHandler.h"
 #include <WiFi.h>
 #include <time.h>
+#include "sntp.h"
 
 const char* NTP_SERVER = "pool.ntp.org";
 const long GMT_OFFSET_SEC = 0;
 const int DAYLIGHT_OFFSET_SEC = 0;
-const int RETRIES = 20;
+const int RETRIES = 60;
+
+bool TIME_SYNCED = false;
 
 static void printLocalTime() {
   struct tm timeinfo;
@@ -19,6 +22,11 @@ static void printLocalTime() {
   Serial.printf("TimeHandler - Current Time: %s\n", timeString);
 }
 
+void timeAvailable(struct timeval* t) {
+  Serial.println("TimeHandler - Got time adjustment from NTP!");
+  TIME_SYNCED = true;
+}
+
 bool TimeHandler::syncRealTimeClock() {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("TimeHandler - Wi-Fi not connected. Cannot sync time.");
@@ -26,6 +34,9 @@ bool TimeHandler::syncRealTimeClock() {
   }
 
   Serial.println("TimeHandler - Configuring time synchronization settings...");
+
+  sntp_set_time_sync_notification_cb(timeAvailable);
+  sntp_set_sync_mode(SNTP_SYNC_MODE_IMMED);
 
   configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVER);
 
@@ -35,8 +46,8 @@ bool TimeHandler::syncRealTimeClock() {
 
   struct tm timeinfo;
 
-  while (!getLocalTime(&timeinfo) && retryCount < RETRIES) {
-    Serial.printf("TimeHandler - Synchronization attempt %d/%d failed. Retrying...\n", retryCount + 1, RETRIES);
+  while (!TIME_SYNCED && retryCount < RETRIES) {
+    Serial.printf("TimeHandler - Not synchronized yet. Retrying %d/%d ...\n", retryCount + 1, RETRIES);
     delay(1000);  // Wait 1000ms before retrying
     retryCount++;
   }
