@@ -5,6 +5,8 @@
 #include <WiFi.h>
 #include "ScheduleHandler.h"
 #include "PreferencesHandler.h"
+#include "VoltageSensor.h"
+#include "Messages.h"
 
 const uint64_t DEEP_SLEEP_DURATION_US = 60000000;
 
@@ -23,7 +25,7 @@ void setup() {
     initialSetupDone = true;
     Serial.println("Main - WiFiManager setup completed.");
     WiFiManagerWrapper::autoConnectWiFi();
-    TelegramHandler::sendBotMessage("Устройство готово к использованию.");
+    TelegramHandler::sendBotMessage(MESSAGE_READY_TO_USE + MESSAGE_END_SEPARATOR + VoltageSensor::getVoltageInfoMessage());
   } else {
     Serial.println("Main - Initial setup already done. Skipping WiFiManager setup.");
   }
@@ -43,22 +45,17 @@ void loop() {
   bool timeSynced = TimeHandler::syncRealTimeClock();
   if (!timeSynced) {
     Serial.println("Main - Failed to sync time. Sending Telegram message.");
-    TelegramHandler::sendBotMessage("Возникла ошибка при синхронизации времени. Переподключение через 5 минут.");
+    TelegramHandler::sendBotMessage(MESSAGE_TIME_SYNC_ERROR);
     goToDeepSleep(300);
   }
 
   std::vector<time_t> feedingTimes = ScheduleHandler::parseFeedingSchedule();
-  Serial.print("Main - Parsed feeding schedule: ");
-  for (time_t feedingTime : feedingTimes) {
-    Serial.print(feedingTime);
-    Serial.print(" ");
-  }
-  Serial.println();
 
   time_t feedingTime = ScheduleHandler::shouldFeedNow(feedingTimes);
+
   if (feedingTime != 0) {
     Serial.println("Main - Feeding time! Activating feeder...");
-    TelegramHandler::sendBotMessage("Настало время кормить питомца.");
+    TelegramHandler::sendBotMessage(MESSAGE_TIME_TO_FEED + MESSAGE_END_SEPARATOR + VoltageSensor::getVoltageInfoMessage());
     // Perform feeding action here
 
     PreferencesHandler::saveLastFeedingTime(feedingTime);
