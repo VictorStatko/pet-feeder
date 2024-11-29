@@ -4,13 +4,12 @@
 
 const int MIN_TIME_GAP = 120;
 
-std::vector<time_t> ScheduleHandler::parseFeedingSchedule() {
+std::vector<time_t> ScheduleHandler::parseFeedingSchedule(const time_t now) {
   std::vector<String> feedingSchedule = PreferencesHandler::getFeedingSchedule();
   std::vector<time_t> feedingTimes;
 
   struct tm timeinfo;
-  time_t now;
-  time(&now);
+
   localtime_r(&now, &timeinfo);
 
   int year = timeinfo.tm_year;
@@ -36,11 +35,8 @@ std::vector<time_t> ScheduleHandler::parseFeedingSchedule() {
   return feedingTimes;
 }
 
-time_t ScheduleHandler::shouldFeedNow(const std::vector<time_t>& feedingTimes) {
+time_t ScheduleHandler::shouldFeedNow(const std::vector<time_t>& feedingTimes, const time_t now) {
   time_t lastFeedingTime = PreferencesHandler::getLastFeedingTime();
-
-  time_t now;
-  time(&now);
 
   time_t previousDayFeedingTime = feedingTimes.back() - SECONDS_IN_DAY;  // Check last feeding of previous day (time drift)
 
@@ -60,10 +56,7 @@ time_t ScheduleHandler::shouldFeedNow(const std::vector<time_t>& feedingTimes) {
   return 0;
 }
 
-time_t ScheduleHandler::calculateNextWakeup(const std::vector<time_t>& feedingTimes) {
-  time_t now;
-  time(&now);
-
+time_t ScheduleHandler::calculateNextWakeup(const std::vector<time_t>& feedingTimes, const time_t now) {
   Serial.println("ScheduleHandler - Calculating next wakeup time...");
 
   // Iterate through the feeding times and return the next valid wakeup time

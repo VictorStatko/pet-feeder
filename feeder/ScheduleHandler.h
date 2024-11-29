@@ -11,11 +11,11 @@ const int SECONDS_IN_DAY = 86400;
 
 class ScheduleHandler {
 public:
-  static std::vector<time_t> parseFeedingSchedule();
+  static std::vector<time_t> parseFeedingSchedule(const time_t now);
 
-  static time_t shouldFeedNow(const std::vector<time_t>& feedingTimes);
+  static time_t shouldFeedNow(const std::vector<time_t>& feedingTimes, const time_t now);
 
-  static time_t calculateNextWakeup(const std::vector<time_t>& feedingTimes);
+  static time_t calculateNextWakeup(const std::vector<time_t>& feedingTimes, const time_t now);
 
   static bool validateFeedingSchedule(const String& feedingSchedule);
 };

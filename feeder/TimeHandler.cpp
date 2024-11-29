@@ -38,6 +38,8 @@ bool TimeHandler::syncRealTimeClock() {
   sntp_set_time_sync_notification_cb(timeAvailable);
   sntp_set_sync_mode(SNTP_SYNC_MODE_IMMED);
 
+  TIME_SYNCED = false;
+
   configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVER);
 
   Serial.println("TimeHandler - Synchronizing time with NTP server...");
