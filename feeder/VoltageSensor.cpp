@@ -3,7 +3,10 @@
 #include "UsedPins.h"
 #include "Messages.h"
 
-float VoltageSensor::readVoltage(int pin) {
+const float ESP_MULTIPLIER = 0.966;
+const float MOTOR_MULTIPLIER = 0.958;
+
+float VoltageSensor::readVoltage(int pin, float multiplier) {
   const int attempts = 10;                  // Number of attempts
   const int readingsPerAttempt = 5;         // Number of readings per attempt
   const int delayBetweenAttemptsMs = 1000;  // Delay between attempts in milliseconds
@@ -28,7 +31,7 @@ float VoltageSensor::readVoltage(int pin) {
   }
 
   // Return the average voltage across all attempts
-  return totalVoltage / attempts;
+  return (totalVoltage / attempts) * multiplier;
 }
 
 int VoltageSensor::getBatteryPercentage(float batteryVoltage) {
@@ -56,17 +59,18 @@ int VoltageSensor::getBatteryPercentage(float batteryVoltage) {
   else return 0;
 }
 
+String formatVoltageInfo(float voltage, const String& partName) {
+  int percentage = VoltageSensor::getBatteryPercentage(voltage);
+  String percentageStr = (percentage != 0) ? String(percentage) + "%" : MESSAGE_UNKNOWN;
+  return partName + " " + percentageStr + " (" + String(voltage) + " V)";
+}
+
 String VoltageSensor::getVoltageInfoMessage() {
-  float voltage = readVoltage(ESP_PART_VOLTAGE_SENSOR_PIN);
-  int percentage = getBatteryPercentage(voltage);
+  float voltageEsp = readVoltage(ESP_PART_VOLTAGE_SENSOR_PIN, ESP_MULTIPLIER);
+  String espInfo = formatVoltageInfo(voltageEsp, "ESP");
 
-  String percentageStr;
+  float voltageMotor = readVoltage(MOTOR_PART_VOLTAGE_SENSOR_PIN, MOTOR_MULTIPLIER);
+  String motorInfo = formatVoltageInfo(voltageMotor, "MOTOR");
 
-  if (percentage != 0) {
-    percentageStr = String(percentage) + "%";
-  } else {
-    percentageStr = MESSAGE_UNKNOWN;
-  }
-
-  return MESSAGE_BATTERY_PERCENTAGE + " - " + percentageStr + " (" + String(voltage) + " V)";
+  return MESSAGE_BATTERY_PERCENTAGE + " - " + espInfo + ", " + motorInfo;
 }

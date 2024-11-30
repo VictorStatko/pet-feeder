@@ -17,3 +17,5 @@ After esp32 boot, you have 5 minutes to connect to the created access point (Pet
 If everything is correct, you should receive welcome message to your group (after 5 minutes / or after sucess connection). 
 
 4) Optional - modify VoltageSensor::getBatteryPercentage method to match your 18650 voltage graph (not required, but can increase accuracy of battary percentage detection)
+
+5) Optional - modify VoltageSensor ESP_MULTIPLIER and MOTOR_MULTIPLIER to match your multipliers. To calculate your multiplier you can compare voltage from VoltageSensor::readVoltage and from actual measurments with miltimeter. If measurment with multimeter is greater then VoltageSensor::readVoltage, then multiplier will be > 1. Othervise it will be < 1.

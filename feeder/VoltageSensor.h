@@ -5,7 +5,7 @@
 
 class VoltageSensor {
 public:
-  static float readVoltage(int pin);
+  static float readVoltage(int pin, float multiplier);
   static int getBatteryPercentage(float batteryVoltage);
   static String getVoltageInfoMessage();
 };
