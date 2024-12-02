@@ -14,7 +14,7 @@ const char* const FEEDING_PORTION_WEIGHT_KEY = "feedingPortionWeight";
 const char* const FEEDING_BOWL_WEIGHT_KEY = "feedingBowlWeight";
 const int CONFIG_PORTAL_TIMEOUT_S = 300;
 
-void WiFiManagerWrapper::setupWiFiManager() {
+void WiFiManagerWrapper::setupWiFiManager(TelegramHandler& telegramHandler) {
   Serial.println("WiFiManagerWrapper - Setting up WiFiManager");
 
   bool success = false;
@@ -71,7 +71,7 @@ void WiFiManagerWrapper::setupWiFiManager() {
     if (!PreferencesHandler::saveFeedingSchedule(custom_feeding_schedule.getValue())) {
       success = false;
       Serial.println("WiFiManagerWrapper - Feeding schedule not valid or not set.");
-      TelegramHandler::sendBotMessage("Расписание кормления не задано или не валидно. Проведите конфигурацию снова.");
+      telegramHandler.sendBotMessage("Расписание кормления не задано или не валидно. Проведите конфигурацию снова.");
     } else {
       Serial.println("WiFiManagerWrapper - Feeding schedule saved successfully.");
     }
@@ -79,7 +79,7 @@ void WiFiManagerWrapper::setupWiFiManager() {
     if (!PreferencesHandler::saveFeedingWeightPerPortion(custom_feeding_portion_weight.getValue())) {
       success = false;
       Serial.println("WiFiManagerWrapper - Feeding weight not valid or not set.");
-      TelegramHandler::sendBotMessage("Вес порции не задан или не валиден. Проведите конфигурацию снова.");
+      telegramHandler.sendBotMessage("Вес порции не задан или не валиден. Проведите конфигурацию снова.");
     } else {
       Serial.println("WiFiManagerWrapper - Feeding weight per portion saved successfully.");
     }
@@ -87,11 +87,13 @@ void WiFiManagerWrapper::setupWiFiManager() {
     if (!PreferencesHandler::saveFeedingBowlWeight(custom_feeding_bowl_weight.getValue())) {
       success = false;
       Serial.println("WiFiManagerWrapper - Feeding bowl weight not valid or not set.");
-      TelegramHandler::sendBotMessage("Вес миски не задан или не валиден. Проведите конфигурацию снова.");
+      telegramHandler.sendBotMessage("Вес миски не задан или не валиден. Проведите конфигурацию снова.");
     } else {
       Serial.println("WiFiManagerWrapper - Feeding bowl weight saved successfully.");
     }
   }
+
+  telegramHandler.begin(PreferencesHandler::getBotToken(), PreferencesHandler::getGroupId());
 
   Serial.println("WiFiManagerWrapper - Preferences saved");
 }

@@ -8,7 +8,7 @@ const long GMT_OFFSET_SEC = 0;
 const int DAYLIGHT_OFFSET_SEC = 0;
 const int RETRIES = 60;
 
-bool TIME_SYNCED = false;
+static bool TIME_SYNCED = false;
 
 static void printLocalTime() {
   struct tm timeinfo;

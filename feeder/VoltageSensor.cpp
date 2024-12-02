@@ -3,10 +3,10 @@
 #include "UsedPins.h"
 #include "Messages.h"
 
-const float ESP_MULTIPLIER = 0.966;
-const float MOTOR_MULTIPLIER = 0.958;
+VoltageSensor::VoltageSensor(int pin, float multiplier)
+  : pin(pin), multiplier(multiplier) {}
 
-float VoltageSensor::readVoltage(int pin, float multiplier) {
+float VoltageSensor::readRawVoltage() {
   const int attempts = 10;                  // Number of attempts
   const int readingsPerAttempt = 5;         // Number of readings per attempt
   const int delayBetweenAttemptsMs = 1000;  // Delay between attempts in milliseconds
@@ -31,10 +31,16 @@ float VoltageSensor::readVoltage(int pin, float multiplier) {
   }
 
   // Return the average voltage across all attempts
-  return (totalVoltage / attempts) * multiplier;
+  return totalVoltage / attempts;
 }
 
-int VoltageSensor::getBatteryPercentage(float batteryVoltage) {
+float VoltageSensor::readVoltage() {
+  return readRawVoltage() * multiplier;
+}
+
+int VoltageSensor::getBatteryPercentage() {
+  float batteryVoltage = readVoltage();
+
   if (batteryVoltage >= 4.40) return 0;
   else if (batteryVoltage >= 4.20) return 100;
   else if (batteryVoltage >= 4.12) return 95;
@@ -59,18 +65,10 @@ int VoltageSensor::getBatteryPercentage(float batteryVoltage) {
   else return 0;
 }
 
-String formatVoltageInfo(float voltage, const String& partName) {
-  int percentage = VoltageSensor::getBatteryPercentage(voltage);
+String VoltageSensor::getVoltageInfoMessage(const String& partName) {
+  float voltage = readVoltage();
+  int percentage = getBatteryPercentage();
+
   String percentageStr = (percentage != 0) ? String(percentage) + "%" : MESSAGE_UNKNOWN;
   return partName + " " + percentageStr + " (" + String(voltage) + " V)";
-}
-
-String VoltageSensor::getVoltageInfoMessage() {
-  float voltageEsp = readVoltage(ESP_PART_VOLTAGE_SENSOR_PIN, ESP_MULTIPLIER);
-  String espInfo = formatVoltageInfo(voltageEsp, "ESP");
-
-  float voltageMotor = readVoltage(MOTOR_PART_VOLTAGE_SENSOR_PIN, MOTOR_MULTIPLIER);
-  String motorInfo = formatVoltageInfo(voltageMotor, "MOTOR");
-
-  return MESSAGE_BATTERY_PERCENTAGE + " - " + espInfo + ", " + motorInfo;
 }

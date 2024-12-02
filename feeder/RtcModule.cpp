@@ -1,17 +1,12 @@
 #include "RtcModule.h"
-#include <RtcDS1302.h>
 #include "UsedPins.h"
-#include "TimeHandler.h"
-#include <time.h>
-#include "TelegramHandler.h"
 #include "Messages.h"
 
-ThreeWire myWire(RTC_MODULE_DAT_PIN, RTC_MODULE_CLK_PIN, RTC_MODULE_RST_PIN);
-RtcDS1302<ThreeWire> Rtc(myWire);
+RtcModule::RtcModule(int dataPin, int clkPin, int rstPin, TelegramHandler& handler)
+  : wire(dataPin, clkPin, rstPin), rtc(wire), telegramHandler(handler) {}
 
-String getDateTimeString(const RtcDateTime& dt) {
+String RtcModule::getDateTimeString(const RtcDateTime& dt) {
   char datestring[26];
-
   snprintf_P(
     datestring,
     countof(datestring),
@@ -22,11 +17,10 @@ String getDateTimeString(const RtcDateTime& dt) {
     dt.Hour(),
     dt.Minute(),
     dt.Second());
-
   return String(datestring);
 }
 
-time_t rtcToTime_t(const RtcDateTime& rtcDateTime) {
+time_t RtcModule::rtcToTime_t(const RtcDateTime& rtcDateTime) {
   struct tm timeinfo;
   timeinfo.tm_year = rtcDateTime.Year() - 1900;
   timeinfo.tm_mon = rtcDateTime.Month() - 1;
@@ -39,42 +33,41 @@ time_t rtcToTime_t(const RtcDateTime& rtcDateTime) {
   return mktime(&timeinfo);
 }
 
+void RtcModule::begin() {
+  rtc.Begin();
+}
+
 void RtcModule::sync() {
   Serial.println("RtcModule - Syncing RTC module...");
 
-  Rtc.Begin();
   RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
 
-  if (!Rtc.IsDateTimeValid()) {
+  if (!rtc.IsDateTimeValid()) {
     Serial.println("RtcModule - RTC lost confidence in the DateTime! Setting to compiled time.");
-    Rtc.SetDateTime(compiled);
-    TelegramHandler::sendBotMessage(MESSAGE_RTC_MODULE_ERROR);
+    rtc.SetDateTime(compiled);
+    telegramHandler.sendBotMessage(MESSAGE_RTC_MODULE_ERROR);
   }
 
-  if (Rtc.GetIsWriteProtected()) {
+  if (rtc.GetIsWriteProtected()) {
     Serial.println("RtcModule - RTC was write protected, enabling writing now");
-    Rtc.SetIsWriteProtected(false);
+    rtc.SetIsWriteProtected(false);
   }
 
-  if (!Rtc.GetIsRunning()) {
+  if (!rtc.GetIsRunning()) {
     Serial.println("RtcModule - RTC was not actively running, starting now");
-    Rtc.SetIsRunning(true);
+    rtc.SetIsRunning(true);
   }
 
-  RtcDateTime currentRtcTime = Rtc.GetDateTime();
-
+  RtcDateTime currentRtcTime = rtc.GetDateTime();
   Serial.println("RtcModule - Current time: " + getDateTimeString(currentRtcTime));
 
   bool timeSynced = TimeHandler::syncRealTimeClock();
 
   if (timeSynced) {
     struct tm timeinfo;
-
     if (!getLocalTime(&timeinfo)) {
-      currentRtcTime = Rtc.GetDateTime();
-
-      TelegramHandler::sendBotMessage(MESSAGE_TIME_SYNC_ERROR + getDateTimeString(currentRtcTime));
-
+      currentRtcTime = rtc.GetDateTime();
+      telegramHandler.sendBotMessage(MESSAGE_TIME_SYNC_ERROR + getDateTimeString(currentRtcTime));
       Serial.println("RtcModule - Failed to obtain ESP32 RTC time. Current time: " + getDateTimeString(currentRtcTime));
       return;
     }
@@ -87,36 +80,30 @@ void RtcModule::sync() {
       timeinfo.tm_min,
       timeinfo.tm_sec);
 
-    Rtc.SetDateTime(newTime);
+    rtc.SetDateTime(newTime);
 
-    currentRtcTime = Rtc.GetDateTime();
-
+    currentRtcTime = rtc.GetDateTime();
     Serial.println("RtcModule - Time sync successful. RTC updated. Current time: " + getDateTimeString(currentRtcTime));
   } else {
-    currentRtcTime = Rtc.GetDateTime();
-
-    TelegramHandler::sendBotMessage(MESSAGE_TIME_SYNC_ERROR + getDateTimeString(currentRtcTime));
+    currentRtcTime = rtc.GetDateTime();
+    telegramHandler.sendBotMessage(MESSAGE_TIME_SYNC_ERROR + getDateTimeString(currentRtcTime));
     Serial.println("RtcModule - Time sync failed, sent error message to Telegram. Current time: " + getDateTimeString(currentRtcTime));
   }
 }
 
 time_t RtcModule::getCurrentTime() {
   Serial.println("RtcModule - Retrieving current time from RTC...");
-
-  RtcDateTime currentRtcTime = Rtc.GetDateTime();
+  RtcDateTime currentRtcTime = rtc.GetDateTime();
 
   if (!currentRtcTime.IsValid()) {
     time_t now;
     time(&now);
-
-    TelegramHandler::sendBotMessage(MESSAGE_TIME_RETRIEVING_ERROR + String(now));
-
+    telegramHandler.sendBotMessage(MESSAGE_TIME_RETRIEVING_ERROR + String(now));
     Serial.println("RtcModule - Invalid RTC time, fallback to system time.");
     return now;
   }
 
   Serial.print("RtcModule - Current time retrieved from RTC: ");
   Serial.println(getDateTimeString(currentRtcTime));
-
   return rtcToTime_t(currentRtcTime);
 }

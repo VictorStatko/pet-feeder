@@ -4,10 +4,18 @@
 #include <Arduino.h>
 
 class VoltageSensor {
+private:
+  float multiplier;
+  int pin;
+
+  float readRawVoltage();
+
 public:
-  static float readVoltage(int pin, float multiplier);
-  static int getBatteryPercentage(float batteryVoltage);
-  static String getVoltageInfoMessage();
+  VoltageSensor(int pin, float multiplier);
+
+  float readVoltage();
+  int getBatteryPercentage();
+  String getVoltageInfoMessage(const String& partName);
 };
 
 #endif
