@@ -1,6 +1,5 @@
 #include "VoltageSensor.h"
 #include "AnalogUtils.h"
-#include "UsedPins.h"
 #include "Messages.h"
 
 VoltageSensor::VoltageSensor(int pin, float multiplier)
