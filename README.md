@@ -18,15 +18,7 @@ In the Arduino IDE, navigate to:
 ### 3. Define Pins Used by the Feeder
 Update the pin configuration in `feeder/UsedPins.h` according to your hardware setup.
 
-### 4. (Optional) Adjust Voltage Sensor Multipliers
-To fine-tune the voltage readings for `espVoltageSensor` and `motorVoltageSensor`:
-1. Use a multimeter to measure actual voltages.
-2. Compare these measurements with `VoltageSensor::readVoltage`.
-3. Adjust the multiplier:
-   - If the multimeter reading is higher, increase the multiplier (greater than 1).
-   - If it is lower, decrease the multiplier (less than 1).
-
-### 5. Calibrate Load Cell (Step 1)
+### 4. Calibrate Load Cell (Step 1)
 1. Open the file `additional/loadCellCalibration1` in the Arduino IDE.
 2. Upload the sketch to the ESP32 and follow the Serial Monitor instructions.
 3. Calculate the calibration factor using the formula:
@@ -35,17 +27,23 @@ To fine-tune the voltage readings for `espVoltageSensor` and `motorVoltageSensor
    ```  
 4. Save this calibration factor (e.g., `1106`).
 
-### 6. Calibrate Load Cell (Step 2)
+### 5. Calibrate Load Cell (Step 2)
 1. Open the file `additional/loadCellCalibration2` in the Arduino IDE.
 2. Upload the sketch to the ESP32.  
    Perform this step after embedding the load cell into the 3D-printed enclosure (including the plate, but excluding the bowl).
 3. Save the offset value obtained (e.g., `-62230`).
 
-### 7. Configure Load Cell in Code
+### 6. Configure Load Cell in Code
 Include the retrieved calibration values in your code as follows:
 ```cpp
 WeightSensor weightSensor(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN, 1106, -62230);
-```  
+```
+
+### 7. (Optional) Change Messages
+
+Currently, all notification messages are provided only in Russian. If you want, you can change them - everything is in a single file:
+
+**feeder/Messages.h**
 
 ### 8. Explore Additional Examples
 In the `additional` folder, you’ll find example sketches for:
