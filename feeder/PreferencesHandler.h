@@ -8,12 +8,13 @@ public:
   static String getBotToken();
   static String getGroupId();
   static std::vector<String> getFeedingSchedule();
+  static String getFeedingScheduleString();
   static int getFeedingWeightPerPortion();
   static int getFeedingBowlWeight();
   static time_t getLastFeedingTime();
 
-  static void saveBotToken(const String& botToken);
-  static void saveGroupId(const String& groupId);
+  static bool saveBotToken(const String& botToken);
+  static bool saveGroupId(const String& groupId);
   static bool saveFeedingSchedule(const String& feedingSchedule);
   static bool saveFeedingWeightPerPortion(const String& weightPerPortion);
   static bool saveFeedingBowlWeight(const String& bowlWeight);

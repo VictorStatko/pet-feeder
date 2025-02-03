@@ -15,7 +15,7 @@ public:
 
   static time_t shouldFeedNow(const std::vector<time_t>& feedingTimes, const time_t now);
 
-  static time_t calculateNextWakeup(const std::vector<time_t>& feedingTimes, const time_t now);
+  static time_t calculateNextWakeup(const std::vector<time_t>& feedingTimes, const time_t now, const bool feedingInCurrentIteration);
 
   static bool validateFeedingSchedule(const String& feedingSchedule);
 };

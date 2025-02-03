@@ -18,7 +18,7 @@ void setup() {
   // Optional: Set scale calibration factor after initial calibration
   // Replace -7050 with your calibration factor
   scale.set_scale(1106);
-  scale.set_offset(-186450);
+  scale.set_offset(-62230);
 
   Serial.println("HX711 initialized. Place weight on scale...");
 }

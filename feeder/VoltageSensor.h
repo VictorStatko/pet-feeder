@@ -5,17 +5,16 @@
 
 class VoltageSensor {
 private:
-  float multiplier;
   int pin;
 
   float readRawVoltage();
 
 public:
-  VoltageSensor(int pin, float multiplier);
+  VoltageSensor(int pin);
 
   float readVoltage();
-  int getBatteryPercentage();
-  String getVoltageInfoMessage(const String& partName);
+  int getBatteryPercentage(float batteryVoltage);
+  String getVoltageInfoMessage();
 };
 
 #endif

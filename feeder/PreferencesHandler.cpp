@@ -71,6 +71,14 @@ std::vector<String> PreferencesHandler::getFeedingSchedule() {
   return parsedSchedule;
 }
 
+String PreferencesHandler::getFeedingScheduleString() {
+  Preferences preferences;
+  preferences.begin(PREF_FEEDING, true);
+  String feedingSchedule = preferences.getString(PREF_FEEDING_SCHEDULE, DEFAULT_FEEDING_SCHEDULE);
+  preferences.end();
+  return feedingSchedule;
+}
+
 int PreferencesHandler::getFeedingWeightPerPortion() {
   Serial.println("PreferencesHandler - Reading feeding weight per portion from preferences");
   Preferences preferences;
@@ -101,22 +109,38 @@ time_t PreferencesHandler::getLastFeedingTime() {
   return static_cast<time_t>(storedTime);
 }
 
-void PreferencesHandler::saveBotToken(const String& botToken) {
+bool PreferencesHandler::saveBotToken(const String& botToken) {
   Serial.println("PreferencesHandler - Saving bot token to preferences: " + botToken);
+
+  if (botToken.length() == 0) {
+    Serial.println("PreferencesHandler - Bot token is empty. Aborting save.");
+    return false;
+  }
+
   Preferences preferences;
   preferences.begin(PREF_TELEGRAM, false);
   preferences.putString(PREF_TELEGRAM_BOT_TOKEN_KEY, botToken);
   preferences.end();
   Serial.println("PreferencesHandler - Bot token saved successfully");
+
+  return true;
 }
 
-void PreferencesHandler::saveGroupId(const String& groupId) {
+bool PreferencesHandler::saveGroupId(const String& groupId) {
   Serial.println("PreferencesHandler - Saving group ID to preferences: " + groupId);
+
+  if (groupId.length() == 0) {
+    Serial.println("PreferencesHandler - Group id is empty. Aborting save.");
+    return false;
+  }
+
   Preferences preferences;
   preferences.begin(PREF_TELEGRAM, false);
   preferences.putString(PREF_TELEGRAM_GROUP_ID_KEY, groupId);
   preferences.end();
   Serial.println("PreferencesHandler - Group ID saved successfully");
+
+  return true;
 }
 
 bool PreferencesHandler::saveFeedingSchedule(const String& feedingSchedule) {

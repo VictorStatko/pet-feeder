@@ -2,12 +2,12 @@
 #include "AnalogUtils.h"
 #include "Messages.h"
 
-VoltageSensor::VoltageSensor(int pin, float multiplier)
-  : pin(pin), multiplier(multiplier) {}
+VoltageSensor::VoltageSensor(int pin)
+  : pin(pin) {}
 
 float VoltageSensor::readRawVoltage() {
   const int attempts = 10;                  // Number of attempts
-  const int readingsPerAttempt = 5;         // Number of readings per attempt
+  const int readingsPerAttempt = 10;         // Number of readings per attempt
   const int delayBetweenAttemptsMs = 1000;  // Delay between attempts in milliseconds
 
   float totalVoltage = 0;
@@ -34,11 +34,10 @@ float VoltageSensor::readRawVoltage() {
 }
 
 float VoltageSensor::readVoltage() {
-  return readRawVoltage() * multiplier;
+  return readRawVoltage();
 }
 
-int VoltageSensor::getBatteryPercentage() {
-  float batteryVoltage = readVoltage();
+int VoltageSensor::getBatteryPercentage(float batteryVoltage) {
 
   if (batteryVoltage >= 4.40) return 0;
   else if (batteryVoltage >= 4.20) return 100;
@@ -64,10 +63,10 @@ int VoltageSensor::getBatteryPercentage() {
   else return 0;
 }
 
-String VoltageSensor::getVoltageInfoMessage(const String& partName) {
+String VoltageSensor::getVoltageInfoMessage() {
   float voltage = readVoltage();
-  int percentage = getBatteryPercentage();
+  int percentage = getBatteryPercentage(voltage);
 
   String percentageStr = (percentage != 0) ? String(percentage) + "%" : MESSAGE_UNKNOWN;
-  return partName + " " + percentageStr + " (" + String(voltage) + " V)";
+  return MESSAGE_BATTERY_PERCENTAGE + " - " + percentageStr + " (" + String(voltage) + " V)";
 }

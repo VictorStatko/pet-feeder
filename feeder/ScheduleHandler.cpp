@@ -56,8 +56,12 @@ time_t ScheduleHandler::shouldFeedNow(const std::vector<time_t>& feedingTimes, c
   return 0;
 }
 
-time_t ScheduleHandler::calculateNextWakeup(const std::vector<time_t>& feedingTimes, const time_t now) {
+time_t ScheduleHandler::calculateNextWakeup(const std::vector<time_t>& feedingTimes, const time_t now, const bool feedingInCurrentIteration) {
   Serial.println("ScheduleHandler - Calculating next wakeup time...");
+
+  if (feedingInCurrentIteration) {
+    return now + SECONDS_IN_HOUR;
+  }
 
   // Iterate through the feeding times and return the next valid wakeup time
   for (time_t feedingTime : feedingTimes) {

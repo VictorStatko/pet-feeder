@@ -28,7 +28,6 @@ void WeightSensor::end() {
 float WeightSensor::readWeight() {
   Serial.println("WeightSensor - Reading weight...");
   if (sensor.wait_ready_timeout(1000)) {
-    Serial.println("WeightSensor - Sensor ready, reading values...");
     float weight = sensor.get_units(10);  // Get an average of 10 readings
     Serial.print("WeightSensor - Weight read: ");
     Serial.println(weight);
