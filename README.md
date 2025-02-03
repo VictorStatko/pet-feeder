@@ -4,7 +4,7 @@ This project allows you to build an automated pet feeder using an ESP32 microcon
 
 ![main.jpg](media/main.jpg)
 
-[main.MOV](media/main.MOV)
+https://github.com/user-attachments/assets/1bdc0e0a-baae-4a7a-a652-37525bfb75da
 
 ## Software Instructions
 
