@@ -6,7 +6,23 @@ This project allows you to build an automated pet feeder using an ESP32 microcon
 
 https://github.com/user-attachments/assets/1bdc0e0a-baae-4a7a-a652-37525bfb75da
 
-## Software Instructions
+## Hardware
+
+1. ESP32 C3 (I used [TENSTAR ROBOT ESP32-C3](https://sl.aliexpress.ru/p?key=hEJPGh3))
+2. DRV8833 DC Motor Driver (I used [WAVGAT DRV8833 Dual Motor Driver 1A](https://sl.aliexpress.ru/p?key=jnJPG1g))
+3. DC Motor - 6V or lower (I used [JGA25-310 6V 20 RPM](https://sl.aliexpress.ru/p?key=jvJPGnO))
+4. HX711 Weight Sensor + Load Cell (I used [1 KG load cell](https://sl.aliexpress.ru/p?key=o0JPGWY))
+5. DS1302 RTC Module
+6. Voltage Boost Converter (Something like the MT3608 will work, but I used a [UPS module](https://sl.aliexpress.ru/p?key=qwMPGBO) since I had a couple on hand)
+7. Voltage Sensor (I used a [separate module](https://sl.aliexpress.ru/p?key=GOMPG0S), but just a couple of resistors would also work)
+8. Power switch (I used a [double-pole switch](https://sl.aliexpress.ru/p?key=SGMPGXe) because I had it, but a simpler option would work too)
+9. 18650 Parallel Pack Holder
+10. Type-C Connector to power ESP32 C3 (Optional because there are other options, but I find it convenient to use)
+11. Wago Connectors (Optional, but works for me - so why not)
+
+![feeder.drawio.png](media/feeder.drawio.png)
+
+## Software
 
 ### 1. Install Arduino IDE
 Set up the [Arduino IDE for ESP32](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html) by following the official instructions.
