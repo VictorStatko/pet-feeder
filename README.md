@@ -6,6 +6,10 @@ This project allows you to build an automated pet feeder using an ESP32 microcon
 
 https://github.com/user-attachments/assets/1bdc0e0a-baae-4a7a-a652-37525bfb75da
 
+The approximate size of the feeder is 210 mm (width) x 180 mm (depth) x 240 mm (height). These dimensions can be modified as needed. All relevant files are included below.
+
+In this configuration, the feeder holds approximately 1 kg of small-breed dog food.
+
 ## Hardware
 
 1. ESP32 C3 (I used [TENSTAR ROBOT ESP32-C3](https://sl.aliexpress.ru/p?key=hEJPGh3))
@@ -21,6 +25,22 @@ https://github.com/user-attachments/assets/1bdc0e0a-baae-4a7a-a652-37525bfb75da
 11. Wago Connectors (Optional, but works for me - so why not)
 
 ![feeder.drawio.png](media/feeder.drawio.png)
+
+## Model
+
+![model7.png](media/model/model7.png)
+
+First of all, many thanks to Alexander Ulitin (https://github.com/ulitiy).
+
+Initially, I planned to design the project from scratch, but I realized I was a bit lazy. So, I came across his awesome project (https://cubebrush.co/momwillbeproud/products/ndqc7a-5FoB/ultimate-3d-printed-pet-feeder) and decided to redesign it to better suit my needs.
+
+Fusion file of redesigned project: [feeder.f3d](media/feeder.f3d)
+
+Some screenshots can be found here: [model](media/model)
+
+## Printed Parts
+
+The feeder was printed using an Ender 3 V3 KE, which has a print size of 220 mm x 220 mm. Manual supports were used during the printing process. For additional hints and details about the printing process, please refer to the pictures here: [printedParts](media/printedParts)
 
 ## Software
 
