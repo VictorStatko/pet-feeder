@@ -1,6 +1,6 @@
 # Pet Feeder
 
-This project allows you to build an automated pet feeder using an ESP32 microcontroller. It runs on a parallel 18650 battery pack. In my case, it works for about 2 months on a single charge. It supports scheduled feeding based on specified times and portion weights, sends Telegram notifications about all activities, and provides updates on the device's status, including battery percentage.
+This project allows you to build an automated 3d printed pet feeder using an ESP32 microcontroller. It runs on a parallel 18650 battery pack. In my case, it works for about 2 months on a single charge. It supports scheduled feeding based on specified times and portion weights, sends Telegram notifications about all activities, and provides updates on the device's status, including battery percentage.
 
 <img src="media/main.jpg" height="600"/>
 <img src="media/notifications.png" height="600"/>
