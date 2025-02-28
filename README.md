@@ -2,7 +2,8 @@
 
 This project allows you to build an automated pet feeder using an ESP32 microcontroller. It supports scheduled feeding based on specified times and portion weights, sends Telegram notifications about all activities, and provides updates on the device's status, including battery percentage.
 
-![main.jpg](media/main.jpg)
+<img src="media/main.jpg" height="600"/>
+<img src="media/notifications.png" height="600"/>
 
 https://github.com/user-attachments/assets/1bdc0e0a-baae-4a7a-a652-37525bfb75da
 
@@ -28,7 +29,7 @@ In this configuration, the feeder holds approximately 1 kg of small-breed dog fo
 
 ## Model
 
-![model7.png](media/model/model7.png)
+<img src="media/model/model7.png" height="600"/>
 
 First of all, many thanks to Alexander Ulitin (https://github.com/ulitiy).
 
@@ -41,6 +42,10 @@ Some screenshots can be found here: [model](media/model)
 ## Printed Parts
 
 The feeder was printed using an Ender 3 V3 KE, which has a print size of 220 mm x 220 mm. Manual supports were used during the printing process. For additional hints and details about the printing process, please refer to the pictures here: [printedParts](media/printedParts)
+
+## Assembly
+
+Assembly photos can be found here: [assembly](media/assembly)
 
 ## Software
 
@@ -109,10 +114,17 @@ Use these examples to better understand and customize specific components of the
 ### 12. Connect ESP32 to Wi-Fi and Configure Feeder
 1. When powered on, the ESP32 will broadcast an access point named **PetFeeder** with the password **11111111**.
 2. Connect to this access point within 5 minutes to access the configuration portal.
-3. Fill in the following details:
+3. Go to 192.168.4.1
+4. Fill in the following details:
    - Wi-Fi credentials
    - Telegram bot token
    - Telegram group ID
    - Feeding schedule and portion weights
 
+<img src="media/app1.PNG" width="300"/>
+<img src="media/app2.PNG" width="300"/>
+<img src="media/app3.PNG" width="300"/>
+
 Once configured, the ESP32 will connect to Wi-Fi. You’ll receive a welcome message in your Telegram group either immediately upon successful connection or after the 5-minute configuration window expires.
+
+<img src="media/welcomeMessage.png" width="900"/>
